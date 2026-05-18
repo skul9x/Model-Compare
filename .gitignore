@@ -1,0 +1,64 @@
+# Prerequisites
+*.d
+
+# Compiled Object files, Local libraries, Internal files
+*.a
+*.o
+*.so
+*.ko
+*.obj
+*.elf
+*.dylib
+
+# Compiled Dynamic libraries
+*.dll
+*.so
+*.dylib
+
+# Compiled static libraries
+*.a
+*.lib
+
+# Test binary, output & coverage
+*.test
+*.out
+*.prof
+test_output/
+*.log
+
+# Wails built binaries
+build/bin/
+frontend/dist/
+build/windows/
+build/darwin/
+build/linux/
+
+# Node/NPM dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+.stylelintcache
+
+# IDE / Editor config
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Local configuration files
+config.json

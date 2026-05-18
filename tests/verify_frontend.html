@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Kiểm Thử Giao Diện - Google Model Tester (Mock Mode)</title>
+    <!-- Google Fonts Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Embed absolute style.css contents slightly modified for self-containment */
+        /* Reset & Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-card-hover: rgba(255, 255, 255, 0.95);
+            --border-light: rgba(226, 232, 240, 0.8);
+            --border-focus: #0ea5e9;
+            
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --text-white: #ffffff;
+            
+            --accent-sky: #0ea5e9;
+            --accent-purple: #8b5cf6;
+            
+            --status-pending-bg: #f1f5f9;
+            --status-pending-border: #cbd5e1;
+            --status-pending-text: #64748b;
+            
+            --status-running-bg: #fef9c3;
+            --status-running-border: #fde047;
+            --status-running-text: #a16207;
+            
+            --status-success-bg: #dcfce7;
+            --status-success-border: #86efac;
+            --status-success-text: #15803d;
+            
+            --status-error-bg: #fee2e2;
+            --status-error-border: #fca5a5;
+            --status-error-text: #b91c1c;
+
+            --font-primary: 'Outfit', 'Inter', sans-serif;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.04), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+            --shadow-premium: 0 20px 25px -5px rgb(0 0 0 / 0.03), 0 8px 10px -6px rgb(0 0 0 / 0.03);
+            
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background-color: var(--bg-main);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.06) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Mock notice banner */
+        .mock-banner {
+            background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            text-align: center;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-sky) 0%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.03em;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            color: var(--accent-purple);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(139, 92, 246, 0.15);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        /* Grid Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+            flex-grow: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar and Main Cards */
+        .sidebar, .content-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
+        }
+
+        .card.glass {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-premium);
+            border-color: rgba(14, 165, 233, 0.3);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        .card-header-with-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .card-header-with-badge .card-title {
+            margin-bottom: 0;
+        }
+
+        .count-badge {
+            background-color: rgba(14, 165, 233, 0.1);
+            color: var(--accent-sky);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+        }
+
+        /* Inputs & Form Elements */
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            background-color: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .help-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Password Input with Toggle button */
+        .input-group-password {
+            display: flex;
+            position: relative;
+            align-items: center;
+        }
+
+        .input-group-password input {
+            padding-right: 3rem;
+        }
+
+        .btn-icon {
+            position: absolute;
+            right: 0.5rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0.5rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color var(--transition-fast), background-color var(--transition-fast);
+        }
+
+        .btn-icon:hover {
+            color: var(--text-main);
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+        }
+
+        /* Model management */
+        .add-model-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .add-model-group input {
+            flex-grow: 1;
+        }
+
+        .model-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .model-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 0.8rem;
+            background-color: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+            animation: slideIn var(--transition-normal);
+        }
+
+        .model-item:hover {
+            box-shadow: var(--shadow-sm);
+            border-color: rgba(14, 165, 233, 0.2);
+        }
+
+        .model-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .btn-delete-model {
+            background: transparent;
+            border: none;
+            color: var(--status-error-text);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color var(--transition-fast);
+        }
+
+        .btn-delete-model:hover {
+            background-color: var(--status-error-bg);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Browse Dir Group */
+        .dir-picker-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .dir-picker-group input {
+            flex-grow: 1;
+            background-color: #f1f5f9;
+            cursor: default;
+        }
+
+        /* Buttons */
+        .btn-primary, .btn-secondary, .btn-action {
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s ease, background-color var(--transition-fast), box-shadow var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-sky);
+            color: var(--text-white);
+            padding: 0.75rem 1.25rem;
+            box-shadow: 0 4px 10px -2px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: #0284c7;
+            transform: scale(1.02);
+        }
+
+        .btn-primary:active, .btn-secondary:active, .btn-action:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background-color: #ffffff;
+            color: var(--text-main);
+            border: 1px solid var(--border-light);
+            padding: 0.75rem 1.25rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            transform: scale(1.02);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, var(--accent-sky) 0%, var(--accent-purple) 100%);
+            color: var(--text-white);
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            width: 100%;
+            box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-action:hover {
+            filter: brightness(1.05);
+            transform: scale(1.02);
+            box-shadow: 0 12px 20px -3px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-action:disabled {
+            background: #cbd5e1;
+            color: #94a3b8;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+            filter: none;
+        }
+
+        /* Bulk Text Area */
+        .bulk-textarea {
+            min-height: 200px;
+            font-family: 'Inter', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Preview list */
+        .preview-container {
+            margin-top: 1rem;
+        }
+
+        .preview-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .split-text-preview-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .preview-item {
+            padding: 0.75rem 1rem;
+            background-color: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .preview-item-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: var(--accent-sky);
+            margin-bottom: 0.2rem;
+        }
+
+        .preview-item-char-count {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .preview-item-body {
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .no-data-text {
+            color: var(--text-muted);
+            text-align: center;
+            font-style: italic;
+            padding: 1.5rem;
+            background-color: #ffffff;
+            border: 1px dashed var(--border-light);
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* Action and Progress Card */
+        .progress-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Progress bar styles */
+        .progress-bar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .progress-status-text {
+            color: var(--text-main);
+        }
+
+        .progress-percent {
+            color: var(--accent-purple);
+        }
+
+        .progress-track {
+            height: 10px;
+            background-color: #e2e8f0;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-sky) 0%, var(--accent-purple) 100%);
+            border-radius: 9999px;
+            width: 0%;
+            transition: width var(--transition-normal);
+        }
+
+        /* Status Grid */
+        .status-grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .grid-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+
+        /* Grid Task Card */
+        .task-card {
+            border-radius: 10px;
+            padding: 0.75rem;
+            border: 1px solid var(--status-pending-border);
+            background-color: var(--status-pending-bg);
+            color: var(--status-pending-text);
+            transition: all var(--transition-normal);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .task-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .task-card-model {
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-card-time {
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-top: auto;
+        }
+
+        /* Task states */
+        .task-card.pending {
+            background-color: var(--status-pending-bg);
+            border-color: var(--status-pending-border);
+            color: var(--status-pending-text);
+        }
+
+        .task-card.running {
+            background-color: var(--status-running-bg);
+            border-color: var(--status-running-border);
+            color: var(--status-running-text);
+            box-shadow: 0 0 10px rgba(253, 224, 71, 0.2);
+        }
+
+        .task-card.running::after {
+            content: '';
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--status-running-text);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+        }
+
+        .task-card.success {
+            background-color: var(--status-success-bg);
+            border-color: var(--status-success-border);
+            color: var(--status-success-text);
+        }
+
+        .task-card.error {
+            background-color: var(--status-error-bg);
+            border-color: var(--status-error-border);
+            color: var(--status-error-text);
+            cursor: help;
+        }
+
+        /* Tooltip for error tasks */
+        .task-card.error .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--text-main);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 0.5rem;
+            position: absolute;
+            z-index: 10;
+            bottom: 110%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 0.75rem;
+            font-weight: 400;
+            box-shadow: var(--shadow-md);
+            pointer-events: none;
+            word-break: break-word;
+        }
+
+        .task-card.error:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Console logs */
+        .console-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .btn-text {
+            background: transparent;
+            border: none;
+            color: var(--accent-sky);
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            transition: background-color var(--transition-fast);
+        }
+
+        .btn-text:hover {
+            background-color: rgba(14, 165, 233, 0.05);
+        }
+
+        .console-logs {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-family: 'Inter', monospace;
+            font-size: 0.8rem;
+            height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .console-line {
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .console-line.info {
+            color: #38bdf8;
+        }
+
+        .console-line.success {
+            color: #4ade80;
+        }
+
+        .console-line.error {
+            color: #f87171;
+        }
+
+        .console-placeholder {
+            color: #64748b;
+            text-align: center;
+            margin-top: auto;
+            margin-bottom: auto;
+            font-style: italic;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .footer p {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Notice banner about Mock Mode -->
+<div class="mock-banner">
+    <svg class="icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    <span>Chế độ Demo Mocking - Bạn có thể mở trực tiếp file này trên bất kỳ trình duyệt nào để kiểm tra UI & UX!</span>
+</div>
+
+<div id="app">
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <span class="logo-text">Google Model Tester</span>
+                <span class="badge">v1.0.0</span>
+            </div>
+            <p class="subtitle">Trình kiểm thử và so sánh hiệu năng tóm tắt của các mô hình Gemini LLM</p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="main-grid">
+            <!-- Left Column: Config -->
+            <aside class="sidebar">
+                <!-- Gemini API Key Card -->
+                <div class="card glass">
+                    <h3 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        Gemini API Key
+                    </h3>
+                    <div class="input-group-password">
+                        <input type="password" id="api-key-input" placeholder="Nhập Gemini API Key của bạn..." autocomplete="off" />
+                        <button id="toggle-api-key-btn" type="button" class="btn-icon" title="Hiện/Ẩn API Key">
+                            <svg id="eye-icon" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                    <p class="help-text">API Key sẽ được lưu an toàn cục bộ trong config.json của hệ thống.</p>
+                </div>
+
+                <!-- Model Management Card -->
+                <div class="card glass">
+                    <h3 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                        Danh sách Models
+                    </h3>
+                    
+                    <!-- Form thêm model -->
+                    <div class="add-model-group">
+                        <input type="text" id="new-model-input" placeholder="Tên model (vd: gemini-2.5-pro)..." autocomplete="off"/>
+                        <button id="add-model-btn" class="btn-primary">Add Model</button>
+                    </div>
+
+                    <!-- List models -->
+                    <ul id="model-list" class="model-list">
+                        <!-- Model items will be loaded dynamically -->
+                    </ul>
+                </div>
+
+                <!-- System Prompt Card -->
+                <div class="card glass">
+                    <h3 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        System Prompt
+                    </h3>
+                    <textarea id="system-prompt-textarea" placeholder="Nhập Custom System Prompt..."></textarea>
+                    <p class="help-text">Quy định cách Gemini tóm tắt văn bản đầu vào.</p>
+                </div>
+
+                <!-- Output Path Card -->
+                <div class="card glass">
+                    <h3 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                        Thư mục đầu ra
+                    </h3>
+                    <div class="dir-picker-group">
+                        <input type="text" id="output-dir-input" placeholder="Chưa chọn thư mục..." readonly />
+                        <button id="browse-dir-btn" class="btn-secondary">Browse</button>
+                    </div>
+                    <p class="help-text">Nơi lưu kết quả tóm tắt (.txt) và file mapping.json</p>
+                </div>
+            </aside>
+
+            <!-- Right Column: Content & Progress -->
+            <main class="content-panel">
+                <!-- Text Area Input Card -->
+                <div class="card glass">
+                    <div class="card-header-with-badge">
+                        <h3 class="card-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            Nhập Văn Bản Hàng Loạt
+                        </h3>
+                        <span id="text-parts-count-badge" class="count-badge">0 văn bản</span>
+                    </div>
+                    <textarea id="bulk-text-input" class="bulk-textarea" placeholder="Paste toàn bộ các đoạn văn bản cần so sánh vào đây. Phân tách các đoạn bằng cách dùng ký tự --- trên một dòng riêng biệt.&#10;&#10;Ví dụ:&#10;Đoạn văn bản thứ nhất...&#10;---&#10;Đoạn văn bản thứ hai..."></textarea>
+                    
+                    <!-- Preview Parts -->
+                    <div class="preview-container">
+                        <h4 class="preview-title">Danh sách preview các đoạn văn bản:</h4>
+                        <div id="split-text-preview" class="split-text-preview-list">
+                            <div class="no-data-text">Nhập văn bản phía trên để xem preview các đoạn được tách.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button & Progress Panel Card -->
+                <div class="card glass progress-card">
+                    <div class="action-bar">
+                        <button id="start-summary-btn" class="btn-action">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            Bắt đầu tóm tắt (Mô phỏng)
+                        </button>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div id="progress-bar-container" class="progress-bar-container hidden">
+                        <div class="progress-labels">
+                            <span class="progress-status-text" id="progress-status-label">Đang chuẩn bị...</span>
+                            <span class="progress-percent" id="progress-percent-label">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="progress-fill-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Status Grid -->
+                    <div id="status-grid-container" class="status-grid-container hidden">
+                        <h4 class="grid-title">Ma trận tiến trình (Văn bản x Model):</h4>
+                        <div id="status-grid" class="status-grid">
+                            <!-- Task cards will be loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Console Logs -->
+                    <div class="console-container">
+                        <div class="console-header">
+                            <span>Console Log Tiến trình</span>
+                            <button id="clear-console-btn" class="btn-text">Xóa Log</button>
+                        </div>
+                        <div id="console-logs" class="console-logs">
+                            <div class="console-placeholder">[Chưa chạy tiến trình tóm tắt]</div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 Google Model Tester - Phiên bản kiểm thử UI độc lập</p>
+        </footer>
+    </div>
+</div>
+
+<script>
+    // --- MOCK WAILS BACKEND INTERFACE ---
+    const MockBackend = {
+        config: {
+            apiKey: 'GEMINI_API_KEY_MOCK_PLACEHOLDER',
+            models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-exp'],
+            systemPrompt: 'Hãy tóm tắt đoạn văn bản sau đây thành một danh sách gạch đầu dòng được đánh số thứ tự 1, 2, 3... tập trung vào các ý chính quan trọng nhất.',
+            outputDir: '/home/skul9x/Documents/ModelTester/Summaries'
+        },
+        
+        async LoadConfig() {
+            return { ...this.config };
+        },
+        
+        async SaveConfig(cfg) {
+            this.config = { ...cfg };
+            console.log('Saved Config via Mock Go API:', this.config);
+            return null;
+        },
+        
+        async SelectDirectory() {
+            // Mock directory selection
+            return '/home/skul9x/Documents/ModelTester/' + 'Results_' + Math.floor(Math.random() * 1000);
+        },
+        
+        async SummarizeText(model, prompt, text) {
+            // Mock Gemini latency
+            const duration = 1000 + Math.floor(Math.random() * 2000);
+            await new Promise(resolve => setTimeout(resolve, duration));
+            
+            // Randomly succeed or fail (90% success rate)
+            if (Math.random() > 0.08) {
+                return [`[MOCK SUMMARY BY ${model}]\n1. Đây là tóm tắt dòng 1 mô phỏng cho đoạn văn bản có ${text.length} ký tự.\n2. Ý quan trọng tiếp theo được trích xuất.\n3. Kết quả đáp ứng prompt: "${prompt.substring(0, 30)}..."`, duration];
+            } else {
+                throw new Error(`Gemini API Error: Quá tải tài nguyên hoặc Key không hợp lệ (Mock Exception)`);
+            }
+        },
+        
+        async SaveResult(dir, modelIdx, vbIdx, content, duration) {
+            console.log(`Saved Mock Result in ${dir}: model_${modelIdx}-vb_${vbIdx}.txt | Time: ${duration}ms`);
+            return null;
+        },
+        
+        async SaveMapping(dir, models, texts) {
+            console.log(`Saved Mock Mapping mapping.json in ${dir}`);
+            return null;
+        }
+    };
+
+    // Replace Go imports with Mock
+    const LoadConfig = () => MockBackend.LoadConfig();
+    const SaveConfig = (cfg) => MockBackend.SaveConfig(cfg);
+    const SelectDirectory = () => MockBackend.SelectDirectory();
+    const SummarizeText = (m, p, t) => MockBackend.SummarizeText(m, p, t);
+    const SaveResult = (d, mIdx, vIdx, c, dur) => MockBackend.SaveResult(d, mIdx, vIdx, c, dur);
+    const SaveMapping = (d, m, t) => MockBackend.SaveMapping(d, m, t);
+
+    // --- APPLICATION LOGIC ---
+    const state = {
+        apiKey: '',
+        models: [],
+        systemPrompt: '',
+        outputDir: '',
+        texts: []
+    };
+
+    // UI Elements
+    const apiKeyInput = document.getElementById('api-key-input');
+    const toggleApiKeyBtn = document.getElementById('toggle-api-key-btn');
+    const eyeIcon = document.getElementById('eye-icon');
+
+    const newModelInput = document.getElementById('new-model-input');
+    const addModelBtn = document.getElementById('add-model-btn');
+    const modelList = document.getElementById('model-list');
+
+    const systemPromptTextarea = document.getElementById('system-prompt-textarea');
+
+    const outputDirInput = document.getElementById('output-dir-input');
+    const browseDirBtn = document.getElementById('browse-dir-btn');
+
+    const bulkTextInput = document.getElementById('bulk-text-input');
+    const textPartsCountBadge = document.getElementById('text-parts-count-badge');
+    const splitTextPreview = document.getElementById('split-text-preview');
+
+    const startSummaryBtn = document.getElementById('start-summary-btn');
+    const progressBarContainer = document.getElementById('progress-bar-container');
+    const progressStatusLabel = document.getElementById('progress-status-label');
+    const progressPercentLabel = document.getElementById('progress-percent-label');
+    const progressFillBar = document.getElementById('progress-fill-bar');
+
+    const statusGridContainer = document.getElementById('status-grid-container');
+    const statusGrid = document.getElementById('status-grid');
+
+    const consoleLogs = document.getElementById('console-logs');
+    const clearConsoleBtn = document.getElementById('clear-console-btn');
+
+    // Initialize App
+    document.addEventListener('DOMContentLoaded', () => {
+        initApp();
+    });
+
+    async function initApp() {
+        setupEventListeners();
+        await loadConfig();
+        
+        // Mock sample texts for easy verification
+        bulkTextInput.value = `Công nghệ Trí tuệ Nhân tạo đang thay đổi thế giới nhanh chóng. Các mô hình ngôn ngữ lớn (LLM) ngày càng thông minh hơn.\n---\nGoogle vừa ra mắt thế hệ mô hình Gemini mới có khả năng xử lý ngữ cảnh cực dài lên tới hàng triệu token.\n---\nAntigravity là một trợ lý AI mạnh mẽ có khả năng viết code, debug và thiết kế hệ thống chuyên nghiệp.`;
+        
+        parseBulkText();
+    }
+
+    // Load Configuration
+    async function loadConfig() {
+        try {
+            const cfg = await LoadConfig();
+            
+            state.apiKey = cfg.apiKey || '';
+            state.models = cfg.models || ['gemini-1.5-flash', 'gemini-1.5-pro'];
+            state.systemPrompt = cfg.systemPrompt || 'Hãy tóm tắt đoạn văn bản sau đây thành một danh sách gạch đầu dòng được đánh số thứ tự 1, 2, 3... tập trung vào các ý chính quan trọng nhất.';
+            state.outputDir = cfg.outputDir || '';
+
+            // Display on UI
+            apiKeyInput.value = state.apiKey;
+            systemPromptTextarea.value = state.systemPrompt;
+            outputDirInput.value = state.outputDir;
+            
+            renderModels();
+            
+            logConsole('Môi trường Mocking: Cấu hình mặc định được tải thành công.', 'success');
+        } catch (err) {
+            logConsole(`Lỗi khi tải cấu hình: ${err}`, 'error');
+        }
+    }
+
+    // Save Configuration
+    async function saveAppConfig() {
+        try {
+            const cfg = {
+                apiKey: state.apiKey,
+                models: state.models,
+                systemPrompt: state.systemPrompt,
+                outputDir: state.outputDir
+            };
+            await SaveConfig(cfg);
+        } catch (err) {
+            logConsole(`Không thể lưu cấu hình: ${err}`, 'error');
+        }
+    }
+
+    // Setup Event Listeners
+    function setupEventListeners() {
+        // Toggle API Key visibility
+        toggleApiKeyBtn.addEventListener('click', () => {
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                eyeIcon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+            } else {
+                apiKeyInput.type = 'password';
+                eyeIcon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+            }
+        });
+
+        // API Key input change
+        apiKeyInput.addEventListener('input', () => {
+            state.apiKey = apiKeyInput.value.trim();
+            saveAppConfig();
+        });
+
+        // Add model
+        addModelBtn.addEventListener('click', handleAddModel);
+        newModelInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleAddModel();
+            }
+        });
+
+        // System prompt change
+        systemPromptTextarea.addEventListener('input', () => {
+            state.systemPrompt = systemPromptTextarea.value;
+            saveAppConfig();
+        });
+
+        // Browse Directory
+        browseDirBtn.addEventListener('click', async () => {
+            try {
+                const selected = await SelectDirectory();
+                if (selected) {
+                    state.outputDir = selected;
+                    outputDirInput.value = selected;
+                    await saveAppConfig();
+                    logConsole(`[Mock] Đã chọn thư mục: ${selected}`, 'success');
+                }
+            } catch (err) {
+                logConsole(`Lỗi khi chọn thư mục: ${err}`, 'error');
+            }
+        });
+
+        // Bulk text input parser
+        bulkTextInput.addEventListener('input', parseBulkText);
+
+        // Start summary execution
+        startSummaryBtn.addEventListener('click', startSummary);
+
+        // Clear logs
+        clearConsoleBtn.addEventListener('click', () => {
+            consoleLogs.innerHTML = '<div class="console-placeholder">[Log đã được dọn sạch]</div>';
+        });
+    }
+
+    // Render Model list
+    function renderModels() {
+        modelList.innerHTML = '';
+        
+        if (state.models.length === 0) {
+            modelList.innerHTML = '<li class="no-data-text" style="padding:0.75rem; font-size:0.85rem;">Không có model nào. Hãy thêm ở trên!</li>';
+            return;
+        }
+
+        state.models.forEach((model, index) => {
+            const li = document.createElement('li');
+            li.className = 'model-item';
+            li.innerHTML = `
+                <span class="model-name">${model}</span>
+                <button class="btn-delete-model" data-index="${index}" title="Xóa model">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </button>
+            `;
+            
+            li.querySelector('.btn-delete-model').addEventListener('click', (e) => {
+                const idx = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+                deleteModel(idx);
+            });
+
+            modelList.appendChild(li);
+        });
+    }
+
+    function handleAddModel() {
+        const name = newModelInput.value.trim();
+        if (!name) return;
+        
+        if (state.models.includes(name)) {
+            logConsole(`Model "${name}" đã tồn tại trong danh sách.`, 'error');
+            newModelInput.value = '';
+            return;
+        }
+
+        state.models.push(name);
+        newModelInput.value = '';
+        renderModels();
+        saveAppConfig();
+        logConsole(`Đã thêm model: ${name}`, 'success');
+    }
+
+    function deleteModel(index) {
+        const deletedModel = state.models[index];
+        state.models.splice(index, 1);
+        renderModels();
+        saveAppConfig();
+        logConsole(`Đã xóa model: ${deletedModel}`, 'success');
+    }
+
+    // Parse text area input
+    function parseBulkText() {
+        const text = bulkTextInput.value;
+        if (!text.trim()) {
+            state.texts = [];
+            textPartsCountBadge.textContent = '0 văn bản';
+            splitTextPreview.innerHTML = '<div class="no-data-text">Nhập văn bản phía trên để xem preview các đoạn được tách.</div>';
+            return;
+        }
+
+        // Split text by lines that contain exactly '---'
+        const rawParts = text.split(/(?:^|\n)---\s*(?:\n|$)/);
+        state.texts = rawParts
+            .map(p => p.trim())
+            .filter(p => p.length > 0);
+
+        const count = state.texts.length;
+        textPartsCountBadge.textContent = `${count} văn bản`;
+
+        renderPreview();
+    }
+
+    function renderPreview() {
+        splitTextPreview.innerHTML = '';
+        
+        if (state.texts.length === 0) {
+            splitTextPreview.innerHTML = '<div class="no-data-text">Không có văn bản hợp lệ để hiển thị preview.</div>';
+            return;
+        }
+
+        state.texts.forEach((txt, idx) => {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            
+            // Show first 100 characters as excerpt
+            const excerpt = txt.length > 100 ? txt.substring(0, 100) + '...' : txt;
+            
+            previewItem.innerHTML = `
+                <div class="preview-item-header">
+                    <span>vb_${idx + 1}</span>
+                    <span class="preview-item-char-count">${txt.length} ký tự</span>
+                </div>
+                <div class="preview-item-body">${escapeHTML(excerpt)}</div>
+            `;
+            splitTextPreview.appendChild(previewItem);
+        });
+    }
+
+    // Console Logging helper
+    function logConsole(message, type = 'info') {
+        // Remove placeholder
+        const placeholder = consoleLogs.querySelector('.console-placeholder');
+        if (placeholder) {
+            consoleLogs.innerHTML = '';
+        }
+
+        const timestamp = new Date().toLocaleTimeString();
+        const line = document.createElement('div');
+        line.className = `console-line ${type}`;
+        line.textContent = `[${timestamp}] ${message}`;
+        
+        consoleLogs.appendChild(line);
+        consoleLogs.scrollTop = consoleLogs.scrollHeight;
+    }
+
+    // Escape HTML
+    function escapeHTML(str) {
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // Start core summary loop (Mocked)
+    async function startSummary() {
+        // Validations
+        if (!state.apiKey) {
+            logConsole('Yêu cầu bắt buộc: Chưa nhập Gemini API Key!', 'error');
+            alert('Vui lòng nhập API Key trước khi bắt đầu!');
+            return;
+        }
+        if (state.models.length === 0) {
+            logConsole('Yêu cầu bắt buộc: Chưa cấu hình Model nào!', 'error');
+            alert('Vui lòng thêm ít nhất một Model!');
+            return;
+        }
+        if (state.texts.length === 0) {
+            logConsole('Yêu cầu bắt buộc: Không có nội dung văn bản để tóm tắt!', 'error');
+            alert('Vui lòng paste nội dung văn bản cần tóm tắt!');
+            return;
+        }
+        if (!state.outputDir) {
+            logConsole('Yêu cầu bắt buộc: Chưa chọn thư mục đầu ra!', 'error');
+            alert('Vui lòng chọn thư mục lưu kết quả!');
+            return;
+        }
+
+        // Prepare UI state
+        startSummaryBtn.disabled = true;
+        startSummaryBtn.innerHTML = `
+            <svg class="icon" style="animation: spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+            Đang chạy tóm tắt (Mô phỏng)...
+        `;
+        
+        progressBarContainer.classList.remove('hidden');
+        statusGridContainer.classList.remove('hidden');
+        
+        progressFillBar.style.width = '0%';
+        progressPercentLabel.textContent = '0%';
+        progressStatusLabel.textContent = 'Đang chuẩn bị...';
+
+        // Clear and build Status Grid
+        statusGrid.innerHTML = '';
+        
+        const taskMatrix = [];
+        
+        for (let vIdx = 0; vIdx < state.texts.length; vIdx++) {
+            for (let mIdx = 0; mIdx < state.models.length; mIdx++) {
+                const modelName = state.models[mIdx];
+                
+                const taskCard = document.createElement('div');
+                taskCard.className = 'task-card pending';
+                taskCard.id = `task-${mIdx}-${vIdx}`;
+                
+                taskCard.innerHTML = `
+                    <div class="task-card-header">
+                        <span>Văn bản ${vIdx + 1}</span>
+                        <span class="task-card-status">Chờ chạy</span>
+                    </div>
+                    <div class="task-card-model" title="${modelName}">${modelName}</div>
+                    <div class="task-card-time">-</div>
+                `;
+                
+                statusGrid.appendChild(taskCard);
+                
+                taskMatrix.push({
+                    vIdx,
+                    mIdx,
+                    modelName,
+                    textContent: state.texts[vIdx]
+                });
+            }
+        }
+
+        const totalTasks = taskMatrix.length;
+        let completedTasks = 0;
+        
+        logConsole(`[Mô phỏng] Bắt đầu tiến trình tóm tắt. Tổng tác vụ: ${totalTasks} (${state.texts.length} văn bản x ${state.models.length} mô hình).`, 'info');
+
+        // Sequential execution to avoid API rate limiting
+        for (let i = 0; i < taskMatrix.length; i++) {
+            const task = taskMatrix[i];
+            const taskCard = document.getElementById(`task-${task.mIdx}-${task.vIdx}`);
+            
+            // Mark as running
+            taskCard.className = 'task-card running';
+            taskCard.querySelector('.task-card-status').textContent = 'Đang chạy';
+            logConsole(`[Mô phỏng] [${i+1}/${totalTasks}] Đang chạy ${task.modelName} cho vb_${task.vIdx+1}...`, 'info');
+
+            try {
+                // Call Mock API
+                const res = await SummarizeText(task.modelName, state.systemPrompt, task.textContent);
+                const content = res[0];
+                const responseTimeMs = res[1];
+
+                // Save result (Mock log)
+                await SaveResult(state.outputDir, task.mIdx + 1, task.vIdx + 1, content, responseTimeMs);
+
+                // Mark as success
+                taskCard.className = 'task-card success';
+                taskCard.querySelector('.task-card-status').textContent = 'Thành công';
+                taskCard.querySelector('.task-card-time').textContent = `${(responseTimeMs / 1000).toFixed(2)}s`;
+                
+                logConsole(`[Mô phỏng] [Thành công] ${task.modelName} hoàn thành vb_${task.vIdx+1} trong ${(responseTimeMs / 1000).toFixed(2)}s.`, 'success');
+            } catch (err) {
+                // Mark as error
+                taskCard.className = 'task-card error';
+                taskCard.querySelector('.task-card-status').textContent = 'Thất bại';
+                
+                // Add error tooltip
+                const tooltip = document.createElement('span');
+                tooltip.className = 'tooltip-text';
+                tooltip.textContent = err.message || err.toString();
+                taskCard.appendChild(tooltip);
+                
+                logConsole(`[Mô phỏng] [Lỗi] ${task.modelName} thất bại ở vb_${task.vIdx+1}: ${err.message}`, 'error');
+            }
+
+            completedTasks++;
+            const percent = Math.round((completedTasks / totalTasks) * 100);
+            progressFillBar.style.width = `${percent}%`;
+            progressPercentLabel.textContent = `${percent}%`;
+            progressStatusLabel.textContent = `Mô phỏng: Đang chạy (${completedTasks}/${totalTasks} tác vụ hoàn thành)...`;
+        }
+
+        // Post-execution
+        try {
+            await SaveMapping(state.outputDir, state.models, state.texts);
+            logConsole('[Mô phỏng] Đã tạo file mapping.json thành công.', 'success');
+        } catch (err) {
+            logConsole(`Lỗi khi lưu mapping.json: ${err}`, 'error');
+        }
+
+        // Finalize UI state
+        logConsole('[Mô phỏng] Hoàn tất toàn bộ tiến trình so sánh mô hình!', 'success');
+        progressStatusLabel.textContent = 'Hoàn tất mô phỏng!';
+        
+        startSummaryBtn.disabled = false;
+        startSummaryBtn.innerHTML = `
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Bắt đầu tóm tắt (Mô phỏng)
+        `;
+    }
+</script>
+</body>
+</html>
