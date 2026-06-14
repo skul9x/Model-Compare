@@ -1,0 +1,196 @@
+name: CI/CD Build & Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  determine-version:
+    runs-on: ubuntu-latest
+    outputs:
+      next_version: ${{ steps.calc.outputs.next_version }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next version
+        id: calc
+        run: |
+          # Fetch all tags
+          git fetch --tags
+          
+          # Get latest tag or default to v1.0
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0")
+          echo "Latest tag found: $LATEST_TAG"
+          
+          # Strip 'v' prefix
+          VERSION_NUM=${LATEST_TAG#v}
+          
+          # Split major and minor
+          IFS='.' read -r MAJOR MINOR <<< "$VERSION_NUM"
+          MINOR=${MINOR:-0}
+          
+          # Increment minor
+          NEXT_MINOR=$((MINOR + 1))
+          if [ "$NEXT_MINOR" -eq 10 ]; then
+            NEXT_MAJOR=$((MAJOR + 1))
+            NEXT_MINOR=0
+            NEXT_TAG="v$NEXT_MAJOR.$NEXT_MINOR"
+          else
+            NEXT_TAG="v$MAJOR.$NEXT_MINOR"
+          fi
+          
+          echo "Calculated next tag: $NEXT_TAG"
+          echo "next_version=$NEXT_TAG" >> $GITHUB_OUTPUT
+
+      - name: Create and Push Tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.calc.outputs.next_version }}
+          git push origin ${{ steps.calc.outputs.next_version }}
+
+  build-linux:
+    needs: determine-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev build-essential
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.0'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wails CLI
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Update wails.json version
+        run: |
+          node -e '
+            const fs = require("fs");
+            const config = JSON.parse(fs.readFileSync("wails.json", "utf8"));
+            const version = "${{ needs.determine-version.outputs.next_version }}";
+            const cleanVersion = version.startsWith("v") ? version.substring(1) : version;
+            config.info = {
+              productVersion: cleanVersion,
+              companyName: "Nguyen Duy Truong",
+              productName: "Google Model Tester",
+              copyright: "Copyright Nguyễn Duy Trường 2026",
+              comments: "Trình so sánh hiệu năng các mô hình Gemini"
+            };
+            fs.writeFileSync("wails.json", JSON.stringify(config, null, 2), "utf8");
+          '
+
+      - name: Build application (Linux)
+        run: |
+          wails build -tags webkit2_41
+
+      - name: Package .deb
+        run: |
+          chmod +x build/package_deb.sh
+          ./build/package_deb.sh ${{ needs.determine-version.outputs.next_version }}
+
+      - name: Upload .deb Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: build/bin/*.deb
+
+  build-windows:
+    needs: determine-version
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.0'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wails CLI
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+          echo "$env:USERPROFILE\go\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Update wails.json version
+        run: |
+          node -e '
+            const fs = require("fs");
+            const config = JSON.parse(fs.readFileSync("wails.json", "utf8"));
+            const version = "${{ needs.determine-version.outputs.next_version }}";
+            const cleanVersion = version.startsWith("v") ? version.substring(1) : version;
+            config.info = {
+              productVersion: cleanVersion,
+              companyName: "Nguyen Duy Truong",
+              productName: "Google Model Tester",
+              copyright: "Copyright Nguyễn Duy Trường 2026",
+              comments: "Trình so sánh hiệu năng các mô hình Gemini"
+            };
+            fs.writeFileSync("wails.json", JSON.stringify(config, null, 2), "utf8");
+          '
+
+      - name: Build Application and NSIS Installer (Windows)
+        shell: bash
+        run: |
+          wails build -nsis
+
+      - name: Upload .exe Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: exe-installer
+          path: build/bin/*-installer.exe
+
+  create-release:
+    needs: [determine-version, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Linux deb
+        uses: actions/download-artifact@v4
+        with:
+          name: deb-package
+          path: ./artifacts
+
+      - name: Download Windows exe
+        uses: actions/download-artifact@v4
+        with:
+          name: exe-installer
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.determine-version.outputs.next_version }}
+          name: Release ${{ needs.determine-version.outputs.next_version }}
+          draft: false
+          prerelease: false
+          files: |
+            ./artifacts/*.deb
+            ./artifacts/*-installer.exe
