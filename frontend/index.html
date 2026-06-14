@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Google Model Tester</title>
+    <!-- Google Fonts Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <span class="logo-text">Google Model Tester</span>
+                <span class="badge">v1.0.0</span>
+            </div>
+            <p class="subtitle">Trình kiểm thử và so sánh hiệu năng tóm tắt của các mô hình Gemini LLM</p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="main-grid">
+            <!-- Left Column: Config -->
+            <aside class="sidebar">
+                <!-- Gemini API Key Card -->
+                <div class="card glass">
+                    <h3 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        Gemini API Key
+                    </h3>
+                    <div class="input-group-password">
+                        <input type="password" id="api-key-input" placeholder="Nhập Gemini API Key của bạn..." autocomplete="off" />
+                        <button id="toggle-api-key-btn" type="button" class="btn-icon" title="Hiện/Ẩn API Key">
+                            <svg id="eye-icon" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                    <p class="help-text">API Key sẽ được lưu an toàn cục bộ trong config.json của hệ thống.</p>
+                </div>
+
+                <!-- Model Management Card -->
+                <div class="card glass">
+                    <h3 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                        Danh sách Models
+                    </h3>
+                    
+                    <!-- Form thêm model -->
+                    <div class="add-model-group">
+                        <textarea id="new-model-input" placeholder="Tên model (nhập/dán mỗi dòng một model, vd: gemini-2.5-pro)..." rows="3"></textarea>
+                        <button id="add-model-btn" class="btn-primary">Add Model</button>
+                    </div>
+
+                    <!-- List models -->
+                    <ul id="model-list" class="model-list">
+                        <!-- Model items will be loaded dynamically -->
+                    </ul>
+
+                    <!-- Legend container -->
+                    <div id="model-legend-container" class="model-legend-container">
+                        <h4 class="legend-title">Chú thích ký hiệu Models</h4>
+                        <ul id="model-legend-list" class="legend-list">
+                            <!-- Items will be generated dynamically, e.g. model_1: gemini-2.5-pro -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- System Prompt Card -->
+                <div class="card glass">
+                    <h3 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        System Prompt
+                    </h3>
+                    <textarea id="system-prompt-textarea" placeholder="Nhập Custom System Prompt..."></textarea>
+                    <p class="help-text">Quy định cách Gemini tóm tắt văn bản đầu vào.</p>
+                </div>
+
+                <!-- Output Path Card -->
+                <div class="card glass">
+                    <h3 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                        Thư mục đầu ra
+                    </h3>
+                    <div class="dir-picker-group">
+                        <input type="text" id="output-dir-input" placeholder="Chưa chọn thư mục..." readonly />
+                        <button id="browse-dir-btn" class="btn-secondary">Browse</button>
+                    </div>
+                    <p class="help-text">Nơi lưu kết quả tóm tắt (.txt) và file mapping.json</p>
+                </div>
+            </aside>
+
+            <!-- Right Column: Content & Progress -->
+            <main class="content-panel">
+                <!-- Text Area Input Card -->
+                <div class="card glass">
+                    <div class="card-header-with-badge">
+                        <h3 class="card-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            Danh Sách Văn Bản Cần So Sánh
+                        </h3>
+                        <span id="text-parts-count-badge" class="count-badge">0 văn bản</span>
+                    </div>
+                    
+                    <div id="text-inputs-container" class="text-inputs-container">
+                        <!-- Dynamic text inputs will be loaded here -->
+                    </div>
+
+                    <div class="add-text-action">
+                        <button id="add-text-btn" class="btn-secondary" style="width: 100%; margin-top: 1rem;">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Thêm đoạn văn bản
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Button & Progress Panel Card -->
+                <div class="card glass progress-card">
+                    <div class="action-bar" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button id="start-summary-btn" class="btn-action" style="flex: 1; min-width: 200px;">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            Bắt đầu tóm tắt
+                        </button>
+                        <button id="cancel-summary-btn" class="btn-action btn-cancel hidden" style="flex: 1; min-width: 200px; background: #ef4444; box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                            Hủy tiến trình
+                        </button>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div id="progress-bar-container" class="progress-bar-container hidden">
+                        <div class="progress-labels">
+                            <span class="progress-status-text" id="progress-status-label">Đang chuẩn bị...</span>
+                            <span class="progress-percent" id="progress-percent-label">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="progress-fill-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Status Grid -->
+                    <div id="status-grid-container" class="status-grid-container hidden">
+                        <h4 class="grid-title">Ma trận tiến trình (Văn bản x Model):</h4>
+                        <div id="status-grid" class="status-grid">
+                            <!-- Task cards will be loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Console Logs -->
+                    <div class="console-container">
+                        <div class="console-header">
+                            <span>Console Log Tiến trình</span>
+                            <button id="clear-console-btn" class="btn-text">Xóa Log</button>
+                        </div>
+                        <div id="console-logs" class="console-logs">
+                            <div class="console-placeholder">[Chưa chạy tiến trình tóm tắt]</div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Nguyễn Duy Trường 2026</p>
+        </footer>
+    </div>
+</div>
+
+<script src="./src/main.js" type="module"></script>
+</body>
+</html>

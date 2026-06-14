@@ -1,0 +1,5 @@
+Văn bản thứ nhất cần tóm tắt. Đây là phần test cho vb_1.
+---
+Văn bản thứ hai có độ dài trung bình. Đây là phần test cho vb_2.
+---
+Văn bản thứ ba rất ngắn. Đây là phần test cho vb_3.
