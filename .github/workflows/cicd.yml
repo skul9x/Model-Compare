@@ -163,11 +163,20 @@ jobs:
         run: |
           wails build -nsis
 
+      - name: List build directory
+        shell: bash
+        run: |
+          echo "=== Files in build ==="
+          find build -type f
+          echo "=== Files in build/bin ==="
+          ls -la build/bin || true
+
       - name: Upload .exe Installer Artifact
         uses: actions/upload-artifact@v4
         with:
           name: exe-installer
           path: build/bin/*-installer.exe
+          if-no-files-found: error
 
   create-release:
     needs: [determine-version, build-linux, build-windows]
