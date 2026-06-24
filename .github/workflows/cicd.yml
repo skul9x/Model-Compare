@@ -135,6 +135,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          choco install nsis -y
+
       - name: Install Wails CLI
         run: |
           go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
